@@ -1,0 +1,128 @@
+from keras.layers import Dropout
+
+import pandas as pd
+import numpy as np
+%matplotlib inline
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, Flatten, MaxPool2D
+from keras.utils import to_categorical
+import keras.backend as K
+from keras.callbacks import EarlyStopping
+from tensorflow.keras.datasets import mnist
+from keras.layers import BatchNormalization
+
+#Getting data from Mnist
+(X_train, y_train), (X_test, y_test) = mnist.load_data('/tmp/mnist.npz')
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+#Reshape data
+X_train = X_train.reshape(-1, 28*28)
+X_test = X_test.reshape(-1, 28*28)
+X_train.shape, X_test.shape, y_train, y_test
+
+#Getting 95% acc on test set (val_acc). Save model.summary() . Using Dense Network (not CNN or RNN).
+#Experiment with different things (Different number of nodes in the layers). 
+#For example, 5 10 15 | 8 8 8. Doesn't matter the amount of layers Create function to do that.
+
+units=[[10,12,15],[20,20,25],[25,25,30],[28,30,30],[30,32,32]]
+def model_training(X_train, y_train,X_test,y_test,activation='relu',optimizer='adam',do_bn=True):
+  history1=[]
+  history2=[]
+  history3=[]
+  history4=[]
+  history5=[]
+  i=0
+  for i in range(5):    
+    #for repeat in range(repeats):  
+    print('\n\nTraining model with nodes set',i+1)
+    K.clear_session()
+    model = Sequential()
+    model.add(Dense(units[i][0], input_shape=X_train.shape[1:], kernel_initializer='normal', activation='relu'))
+    if do_bn:
+      model.add(BatchNormalization())
+      model.add(Dropout(0.25))
+    # second fully connected layer
+    model.add(Dense(units[i][1],kernel_initializer='normal', activation='relu'))
+    if do_bn:
+      model.add(BatchNormalization())
+      model.add(Dropout(0.25))
+    #third
+    model.add(Dense(units[i][2],kernel_initializer='normal', activation='relu'))
+    if do_bn:
+      model.add(BatchNormalization())
+      model.add(Dropout(0.5))
+    #output
+    early_stopping_monitor=EarlyStopping(monitor='val_acc',patience=5)
+    model.add(Dense(10, activation='softmax'))
+    model.summary()
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+   
+    while i==0:
+      h1=model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=20,verbose=1,callbacks=[early_stopping_monitor])
+      history1.append(h1.history['val_acc'])
+      break
+    
+    while i==1:
+      h2=model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=20,verbose=1,callbacks=[early_stopping_monitor])
+      history2.append(h2.history['val_acc'])
+      break  
+      
+    while i==2:
+      h3=model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=20,verbose=1,callbacks=[early_stopping_monitor])
+      history3.append(h3.history['val_acc'])
+      break  
+    
+    while i==3:
+      h4=model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=20,verbose=1,callbacks=[early_stopping_monitor])
+      history4.append(h4.history['val_acc'])
+      break  
+     
+    while i==4:
+      h5=model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=20,verbose=1,callbacks=[early_stopping_monitor])
+      history5.append(h5.history['val_acc'])
+      break  
+      
+  i=i+1
+  history1=np.array(history1)
+  history2=np.array(history2)
+  history3=np.array(history3)
+  history4=np.array(history4)
+  history5=np.array(history5)
+  print('Validation accuracy for set 1 [10,12,15] \n',history1)
+  print('Maximum val_acc for node set 1: ',history1.max())
+  print('\nValidation accuracy for set 2 [20,20,25] \n',history2)
+  print('Maximum val_acc for node set 2: ',history2.max())
+  print('\nValidation accuracy for set 3 [25,25,30] \n',history3)
+  print('Maximum val_acc for node set 3: ',history3.max())
+  print('\nValidation accuracy for set 4 [28,30,30] \n',history4)
+  print('Maximum val_acc for node set 4: ',history4.max())
+  print('\nValidation accuracy for set 5 [30,32,32] \n',history5)
+  print('Maximum val_acc for node set 5: ',history5.max())
+ 
+ #Plotting the 5 different node sets
+  figure(num=None, figsize=(10,8), dpi=80, facecolor='w',edgecolor='k')
+  plt.plot(h1.history['val_acc'],label='Node set 1')
+  plt.plot(h2.history['val_acc'],label='Node set 2')
+  plt.plot(h3.history['val_acc'],label='Node set 3')
+  plt.plot(h4.history['val_acc'],label='Node set 4')
+  plt.plot(h5.history['val_acc'],label='Node set 5')
+  plt.xlabel('Epochs')
+  plt.ylabel('Validation Accuracy')
+  plt.title('Model accuracy with different Node sets')
+  plt.legend(loc='best')
+  plt.show()
+
+  print()
+
+  return history1,history2,history3,history4,history5
+ 
+ #Start training the models
+ max_val_acc=model_training(X_train,y_train,X_test,y_test,do_bn=True)

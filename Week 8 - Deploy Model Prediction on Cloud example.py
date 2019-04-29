@@ -151,9 +151,10 @@ SAVED_MODEL_PATH = KERAS_EXPORT_DIRS[-1]
 # Create model version based on that SavedModel directory
 ! gcloud ml-engine versions create $MODEL_VERSION --model $MODEL_NAME --runtime-version 1.13 --python-version 3.5 --framework tensorflow --origin $SAVED_MODEL_PATH
 
+#Predict an input sample
 X_test[0]
 
-"""%%bash
+%%bash
 rm prediction_input.json
 touch prediction_input.json 
 echo "[0.5135135135135136, 0.021828673763804596, 0.6, 0.09852365170231998, 0.0, \
@@ -161,8 +162,8 @@ echo "[0.5135135135135136, 0.021828673763804596, 0.6, 0.09852365170231998, 0.0, 
 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, \
 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]">> prediction_input.json
 cat prediction_input.json
-"""
 
+#This command used to predict the input json file above. Note: All the input must be json file format
 !gcloud ml-engine predict --model mcgill_week8_first_model --version v1 --json-instances prediction_input.json
 
 #! gcloud ml-engine predict --help
@@ -180,6 +181,6 @@ with open('test.json', 'w') as f:
 
 ! gcloud ml-engine predict --model $MODEL_NAME --version $MODEL_VERSION --json-instances test.json
 
-# Delete model
+# Delete model. Note: Used in case the model is broken. We delete to rerun the coding
 ! gcloud ml-engine versions delete v1 --quiet --model mcgill_week8_first_model
 ! gcloud ml-engine models delete mcgill_week8_first_model --quiet

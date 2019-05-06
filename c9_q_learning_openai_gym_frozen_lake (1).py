@@ -23,6 +23,7 @@ from collections import defaultdict
 
 matplotlib.style.use('ggplot')
 
+#Step 2: Create gym 
 env=gym.make('FrozenLake-v0')
 
 from google.colab import files
@@ -30,8 +31,17 @@ src = list(files.upload().values())[0]
 open('plotting.py','wb').write(src)
 import plotting
 
-#Make the Epsilon-greedy policy
+#Step 3: Make the Epsilon-greedy policy
 def createEpsilonGreedyPolicy(Q, epsilon, num_actions):
+    # """ 
+    Creates an epsilon-greedy policy based 
+    on a given Q-function and epsilon. 
+       
+    Returns a function that takes the state 
+    as an input and returns the probabilities 
+    for each action in the form of a numpy array  
+    of length of the action space(set of possible actions). 
+    """#
   def policyFunction(state):
     Action_probabilities = np.ones(num_actions, dtype = float) * epsilon/num_actions
     best_action = np.argmax(Q[state])
@@ -39,38 +49,66 @@ def createEpsilonGreedyPolicy(Q, epsilon, num_actions):
     return Action_probabilities
   return policyFunction
 
-#Build Q-Learning Model
+#Step 4: Build Q-Learning Model
 def qLearning(env,num_episodes,discount_factor=1.0,alpha=0.3,epsilon=0.1):
+""" 
+    Q-Learning algorithm: Off-policy TD control. 
+    Finds the optimal greedy policy while improving 
+    following an epsilon-greedy policy"""
+       
+    # Action value function 
+    # A nested dictionary that maps 
+    # state -> (action -> action-value). 
+    
   Q = defaultdict(lambda: np.zeros(env.action_space.n))
+  
+  # Keeps track of useful statistics 
   stats= plotting.EpisodeStats(episode_lengths = np.zeros(num_episodes),
                                 episode_rewards = np.zeros(num_episodes))
+  
+  # Create an epsilon greedy policy function 
+  # appropriately for environment action space 
   policy = createEpsilonGreedyPolicy(Q, epsilon, env.action_space.n)
+  
+  # For every episode
   for ith_episode in range(num_episodes):
     state = env.reset()
+    
+    # Reset the environment and pick the first action
     for t in itertools.count():
+      
+      # get probabilities of all actions from current state    
       action_probabilities = policy(state)
+      
+      # choose action according to  
+      # the probability distribution 
       action = np.random.choice(np.arange(len(action_probabilities)),
                                 p = action_probabilities)
+      
+      # take action and get reward, transit to next state
       next_state, reward, done, _ = env.step(action)
       
+      # Update statistics
       stats.episode_rewards[ith_episode] += reward
       stats.episode_lengths[ith_episode] = t
       
+      # TD Update
       best_next_action = np.argmax(Q[next_state])
       td_target= reward + discount_factor * Q[next_state][best_next_action]
       td_delta = td_target - Q[state][action]
       Q[state][action] += alpha * td_delta
       
+      # done is True if episode terminated
       if done:
         break
       
       state = next_state
   return Q, stats
 
-# Train the model
+#Step 5: Train the model
 Q, stats = qLearning(env,2000)
 
-#Plot important statistics
+#Step 6: Plot important statistics
 plotting.plot_episode_stats(stats)
 
 env.render()
